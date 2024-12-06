@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
+    "axios": "^1.7.7",
+    "bootstrap": "^5.3.3",
+    "firebase": "^10.14.0",
+    "jwt-decode": "^4.0.0",
+    "proyecto": "file:..",
+    "react-bootstrap": "^2.10.5",
+    "react-router-dom": "^6.26.2",
+    "recharts": "^2.13.3"
+  },
+  "proxy": "http://localhost:5000/",
+  "devDependencies": {
+    "vite": "^5.4.8"
+  },
+  "scripts": {
+    "setup": "npm run setup-env --prefix frontend/app && npm run setup-env --prefix backend && npm install --prefix frontend/app && npm install --prefix backend"
+  }
+}

@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CursoCapacitacion {
+  id_curso          Int             @id @default(autoincrement())
+  nombre_curso      String          @db.VarChar(50)
+  descripcion_curso String          @db.VarChar(500)
+  fecha_creacion    DateTime
+  fecha_limite      DateTime?
+  estado_curso      Boolean
+  modulos           Modulo[]
+  cursoAsignados    CursoAsignado[]
+  areas             CursoArea[]
+}
+
+model Modulo {
+  id_modulo          Int               @id @default(autoincrement())
+  nombre_modulo      String            @db.VarChar(50)
+  descripcion_modulo String            @db.VarChar(500)
+  cursoId            Int
+  estado_modulo      Boolean
+  curso              CursoCapacitacion @relation(fields: [cursoId], references: [id_curso])
+  lecciones          LeccionCurso[]
+}
+
+model LeccionCurso {
+  id_leccion                     Int                              @id @default(autoincrement())
+  nombre_leccion                 String                           @db.VarChar(50)
+  descripcion_leccion            String                           @db.VarChar(500)
+  fecha_de_creacion_leccion      DateTime
+  estado_leccion                 Boolean
+  moduloId                       Int
+  modulo                         Modulo                           @relation(fields: [moduloId], references: [id_modulo])
+  contenidos                     Contenido[]
+  Cumplimiento_leccion           Cumplimiento_leccion[]
+  RegistroVisualizacionContenido RegistroVisualizacionContenido[]
+}
+
+model Contenido {
+  id_contenido                   Int                              @id @default(autoincrement())
+  nombre_archivo                 String                           @db.VarChar(50)
+  indice_archivo                 Int
+  url                            String                           @db.VarChar(2048)
+  tipo_contenido                 String                           @db.VarChar(50)
+  leccionId                      Int
+  leccion                        LeccionCurso                     @relation(fields: [leccionId], references: [id_leccion])
+  RegistroVisualizacionContenido RegistroVisualizacionContenido[]
+}
+
+model Usuario {
+  rut                            String                           @id @db.VarChar(13)
+  nombre                         String                           @db.VarChar(50)
+  apellido_paterno               String                           @db.VarChar(50)
+  apellido_materno               String?                          @db.VarChar(50)
+  correo                         String                           @unique @db.VarChar(60)
+  contrasena                     String
+  rolId                          Int
+  areaId                         Int?
+  activo                         Boolean                          @default(true)
+  rol                            Rol                              @relation(fields: [rolId], references: [id_rol])
+  Area                           Area?                            @relation(fields: [areaId], references: [id_area])
+  cursoAsignados                 CursoAsignado[]
+  cumplimiento_lecciones         Cumplimiento_leccion[]
+  RegistroVisualizacionContenido RegistroVisualizacionContenido[]
+  encuestasAsignadas             EncuestaAsignada[]
+  respuestas                     Respuesta[]
+}
+
+model CursoAsignado {
+  fecha_asignacion DateTime
+  fecha_acceso     DateTime?
+  cursoId          Int
+  usuarioId        String            @db.VarChar(13)
+  curso            CursoCapacitacion @relation(fields: [cursoId], references: [id_curso])
+  usuario          Usuario           @relation(fields: [usuarioId], references: [rut])
+
+  @@id([cursoId, usuarioId])
+}
+
+model Cumplimiento_leccion {
+  usuarioId                 String       @db.VarChar(13)
+  fecha_modificacion_estado DateTime?
+  estado                    Boolean
+  usuario                   Usuario      @relation(fields: [usuarioId], references: [rut])
+  leccionId                 Int
+  leccion                   LeccionCurso @relation(fields: [leccionId], references: [id_leccion])
+
+  @@id([usuarioId, leccionId])
+}
+
+model Area {
+  id_area     Int         @id @default(autoincrement())
+  nombre_area String      @db.VarChar(50)
+  imagen      Bytes?
+  usuarios    Usuario[]
+  cursos      CursoArea[]
+}
+
+model CursoArea {
+  id_curso Int
+  id_area  Int
+
+  curso CursoCapacitacion @relation(fields: [id_curso], references: [id_curso], onDelete: Cascade)
+  area  Area              @relation(fields: [id_area], references: [id_area], onDelete: Cascade)
+
+  @@id([id_curso, id_area]) // Definimos una clave primaria compuesta
+}
+
+model Rol {
+  id_rol     Int       @id @default(autoincrement())
+  nombre_rol String    @db.VarChar(30)
+  usuarios   Usuario[]
+}
+
+model RegistroVisualizacionContenido {
+  id_visualizacion Int      @id @default(autoincrement())
+  usuarioId        String   @db.VarChar(13)
+  contenidoId      Int
+  leccionId        Int
+  timestamp        DateTime @default(now())
+
+  usuario   Usuario      @relation(fields: [usuarioId], references: [rut])
+  contenido Contenido    @relation(fields: [contenidoId], references: [id_contenido])
+  leccion   LeccionCurso @relation(fields: [leccionId], references: [id_leccion])
+}
+
+model Encuesta {
+  id_encuesta        Int                @id @default(autoincrement())
+  titulo             String
+  fecha_creacion     DateTime
+  estado_encuesta    String
+  preguntas          Pregunta[]
+  encuestasAsignadas EncuestaAsignada[]
+}
+
+model EncuestaAsignada {
+  id_asignacion    Int      @id @default(autoincrement())
+  estado           String
+  fecha_asignacion DateTime
+  encuestaId       Int
+  usuarioId        String
+  encuesta         Encuesta @relation(fields: [encuestaId], references: [id_encuesta])
+  usuario          Usuario  @relation(fields: [usuarioId], references: [rut])
+}
+
+model Pregunta {
+  id_pregunta    Int               @id @default(autoincrement())
+  texto_pregunta String
+  tipo_respuesta String
+  encuestaId     Int
+  encuesta       Encuesta          @relation(fields: [encuestaId], references: [id_encuesta])
+  opciones       OpcionRespuesta[]
+  respuestas     Respuesta[]
+}
+
+model OpcionRespuesta {
+  id_opcion    Int         @id @default(autoincrement())
+  texto_opcion String
+  preguntaId   Int
+  pregunta     Pregunta    @relation(fields: [preguntaId], references: [id_pregunta])
+  Respuesta    Respuesta[]
+}
+
+model Respuesta {
+  id_respuesta        Int              @id @default(autoincrement())
+  texto_respuesta     String?
+  fecha_respuesta     DateTime
+  usuarioId           String
+  usuario             Usuario          @relation(fields: [usuarioId], references: [rut])
+  opcionId            Int?
+  opcion              OpcionRespuesta? @relation(fields: [opcionId], references: [id_opcion])
+  Pregunta            Pregunta?        @relation(fields: [preguntaId_pregunta], references: [id_pregunta])
+  preguntaId_pregunta Int?
+
+  @@unique([usuarioId, preguntaId_pregunta])
+}
