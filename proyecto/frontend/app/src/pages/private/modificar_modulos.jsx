@@ -18,28 +18,27 @@ const Modificar_modulo = () => {
     const obtenerDatos = async () => {
       try {
         const [moduloResponse, cursoResponse] = await Promise.all([
-          axios.get <
-            Modulo >
-            `http://localhost:4000/cursos/${cursoId}/modulos/${moduloId}`,
-          axios.get < Curso > `http://localhost:4000/cursos/${cursoId}`,
+          axios.get(
+            `http://localhost:4000/cursos/${cursoId}/modulos/${moduloId}`
+          ),
+          axios.get(`http://localhost:4000/cursos/${cursoId}`),
         ]);
 
-        setModulo(moduloResponse.data); // Ahora TypeScript conoce el tipo de response.data
-        setCurso(cursoResponse.data); // Guarda la información del curso
+        setModulo(moduloResponse.data);
+        setCurso(cursoResponse.data);
+        setLoading(false);
       } catch (error) {
-        // Manejo de error sin usar isAxiosError
-        if (error instanceof Error) {
-          setError(error.message || "Error al obtener el módulo o el curso.");
-        } else {
-          setError("Error al obtener el módulo o el curso.");
-        }
         console.error(error);
-      } finally {
-        setLoading(false); // Actualiza el estado de carga al final
+        setError(
+          "Error al obtener el módulo o el curso. Por favor, verifica que existan."
+        );
+        setLoading(false);
       }
     };
 
-    obtenerDatos();
+    if (cursoId && moduloId) {
+      obtenerDatos();
+    }
   }, [cursoId, moduloId]);
 
   const handleChange = (e) => {
@@ -54,20 +53,12 @@ const Modificar_modulo = () => {
         `http://localhost:4000/cursos/${cursoId}/modulos/${moduloId}`,
         modulo
       );
-      navigate(`/vercurso/${cursoId}`); // Redirige de vuelta a la vista del curso en vercurso
+      navigate(`/vercurso/${cursoId}`);
     } catch (error) {
-      // Manejo de error sin usar isAxiosError
-      if (error instanceof Error) {
-        setError(
-          error.message ||
-            "Error al modificar el módulo. Asegúrate de que todos los campos sean válidos."
-        );
-      } else {
-        setError(
-          "Error al modificar el módulo. Asegúrate de que todos los campos sean válidos."
-        );
-      }
       console.error(error);
+      setError(
+        "Error al modificar el módulo. Asegúrate de que todos los campos sean válidos."
+      );
     }
   };
 

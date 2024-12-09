@@ -10,6 +10,7 @@ import {
   listarAreas,
   modificarArea,
   eliminarArea,
+  obtenerUsuariosPorArea,
 } from "../controllers/areaController.js";
 
 const router = Router();
@@ -24,12 +25,14 @@ router.put("/:id", actualizarArea); // Actualizar un área existente
 router.get("/api/area/:id", listarArea);
 router.get("/api/area/", listarAreas);
 router.get("/api/area/imagen/:id", obtenerImagenArea);
+router.get("/api/area/:id_area/usuarios", obtenerUsuariosPorArea);
 
 // POST
 router.post("/api/area/", upload, crearArea_capacitaciones);
 
 // PUT
 router.put("/api/area/:id", modificarArea);
+router.put("/api/area/:id", upload, modificarArea);
 
 // DELETE
 router.delete("/api/area/:id", eliminarArea);

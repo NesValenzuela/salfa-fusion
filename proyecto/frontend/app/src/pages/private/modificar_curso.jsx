@@ -31,6 +31,12 @@ const Modificar_curso = () => {
     fetchCurso();
   }, [id]);
 
+  const getFechaMinima = () => {
+    const hoy = new Date();
+    hoy.setDate(hoy.getDate() + 1); // Suma un día para no permitir la fecha actual
+    return hoy.toISOString().split("T")[0];
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -49,7 +55,7 @@ const Modificar_curso = () => {
 
       if (response.status === 200) {
         console.log("Curso modificado:", response.data);
-        navigate("/listado_cursos");
+        navigate("/listado-cursos");
       } else {
         setError("No se pudo modificar el curso. Intenta nuevamente.");
       }
@@ -114,12 +120,13 @@ const Modificar_curso = () => {
               id="fechaLimite"
               className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={fechaLimite}
+              min={getFechaMinima()} // Agregamos la validación de fecha mínima
               onChange={(e) => setFechaLimite(e.target.value)}
             />
           </div>
 
           <div className="flex justify-center space-x-2">
-            <Link to="/listado_cursos">
+            <Link to="/admin-cursos">
               <button
                 type="button"
                 className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"

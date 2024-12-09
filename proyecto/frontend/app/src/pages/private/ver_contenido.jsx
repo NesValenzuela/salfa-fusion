@@ -237,10 +237,9 @@ export default function VerContenido() {
   };
 
   const handleSort = async (newOrder) => {
-    setContenidos(newOrder);
-
     try {
-      // Actualizar índices en el backend
+      setContenidos(newOrder);
+
       const updates = newOrder.map((contenido, index) => ({
         id_contenido: contenido.id_contenido,
         indice_archivo: index + 1,
@@ -251,6 +250,7 @@ export default function VerContenido() {
       });
     } catch (error) {
       console.error("Error al reordenar contenidos:", error);
+      fetchContenidos();
     }
   };
 
@@ -279,9 +279,11 @@ export default function VerContenido() {
           <ReactSortable
             list={contenidos}
             setList={handleSort}
-            className="flex flex-col gap-2"
             animation={200}
             handle=".drag-handle"
+            ghostClass="sortable-ghost"
+            dragClass="sortable-drag"
+            className="space-y-2"
           >
             {contenidos.map((contenido) => (
               <div
@@ -289,10 +291,27 @@ export default function VerContenido() {
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
               >
                 <div className="p-4">
-                  {/* Cabecera del item */}
                   <div className="flex items-center gap-4">
-                    <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600">
-                      <i className="fas fa-grip-vertical text-xl"></i>
+                    <div className="drag-handle cursor-grab active:cursor-grabbing">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-gray-400"
+                      >
+                        <circle cx="9" cy="12" r="1" />
+                        <circle cx="9" cy="5" r="1" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="15" cy="12" r="1" />
+                        <circle cx="15" cy="5" r="1" />
+                        <circle cx="15" cy="19" r="1" />
+                      </svg>
                     </div>
 
                     <div className="flex-1">
@@ -345,7 +364,6 @@ export default function VerContenido() {
                     </div>
                   </div>
 
-                  {/* Contenido expandible */}
                   {expandedContent === contenido.id_contenido && (
                     <div className="mt-4 border-t pt-4">
                       {renderContenido(contenido)}
@@ -359,22 +377,38 @@ export default function VerContenido() {
       </div>
 
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
-            <SubirContenido
-              leccionId={leccionId}
-              onClose={() => setShowPopup(false)}
-              onSuccess={() => {
-                setShowPopup(false);
-                fetchContenidos();
-              }}
-            />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPopup(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-6 overflow-y-auto">
+              <SubirContenido
+                leccionId={leccionId}
+                onClose={() => setShowPopup(false)}
+                onSuccess={() => {
+                  setShowPopup(false);
+                  fetchContenidos();
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
 
       {showEditPopup && editingContent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditPopup(false);
+            }
+          }}
+        >
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
               Editar nombre del archivo

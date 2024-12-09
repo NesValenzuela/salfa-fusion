@@ -137,10 +137,10 @@ const SubirContenido = ({ leccionId, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="w-full">
+      <div className="max-w-md mx-auto space-y-6">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="text-center text-2xl font-bold text-gray-900">
             Subir Archivos de Lecciones
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
@@ -149,7 +149,7 @@ const SubirContenido = ({ leccionId, onClose, onSuccess }) => {
           </p>
         </div>
         <div
-          className="mt-8 space-y-6"
+          className="space-y-6"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
@@ -203,19 +203,15 @@ const SubirContenido = ({ leccionId, onClose, onSuccess }) => {
               Archivo subido con éxito.
             </div>
           )}
-          <div>
-            <button
+          <div className="flex flex-col gap-2">
+            <Button
               onClick={handleSubmit}
               disabled={!file || uploading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400"
             >
               {uploading ? "Subiendo..." : "Subir archivo"}
-            </button>
-            <div className="mt-2"></div>
-            <Button
-              onClick={onClose}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
-            >
+            </Button>
+            <Button onClick={onClose} variant="outline" className="w-full">
               Cerrar
             </Button>
           </div>

@@ -14,6 +14,7 @@ const Agregar_modulos = () => {
       try {
         const response = await axios.get(`http://localhost:4000/cursos/${id}`);
         setNombreCurso(response.data.nombre_curso);
+        console.log(response.data.nombre_curso);
       } catch (error) {
         console.error("Error al obtener el curso:", error);
       }
@@ -33,7 +34,7 @@ const Agregar_modulos = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:3000/cursos/${id}/modulos`,
+        `http://localhost:4000/cursos/${id}/modulos`,
         nuevoModulo
       );
       console.log("Módulo creado:", response.data);

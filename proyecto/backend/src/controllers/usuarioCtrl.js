@@ -484,9 +484,16 @@ export const eliminarUsuarios = async (req, res) => {
   try {
     for (const rut of usuarios) {
       try {
-        // Obtener el usuario para conseguir su correo
+        // Obtener el usuario para verificar que existe
         const usuario = await prisma.usuario.findUnique({
           where: { rut },
+          include: {
+            respuestas: true,
+            encuestasAsignadas: true,
+            RegistroVisualizacionContenido: true,
+            cumplimiento_lecciones: true,
+            cursoAsignados: true,
+          },
         });
 
         if (!usuario) {
@@ -498,29 +505,40 @@ export const eliminarUsuarios = async (req, res) => {
           continue;
         }
 
-        // Intentar eliminar usuario de Firebase
-
-        try {
-          // Primero obtenemos el UID del usuario en Firebase
-          const userRecord = await auth.getUserByEmail(usuario.correo);
-          // Ahora eliminamos usando el UID
-          await auth.deleteUser(userRecord.uid);
-        } catch (firebaseError) {
-          console.log("Error Firebase:", {
-            code: firebaseError.code,
-            message: firebaseError.message,
-            errorCompleto: firebaseError,
-          });
-          // Si el usuario no existe en Firebase, continuamos con la eliminación en la BD
-          if (firebaseError.code !== "auth/user-not-found") {
-            throw firebaseError;
-          }
+        // Verificar registros relacionados y construir mensaje
+        const registrosActivos = [];
+        if (usuario.respuestas.length > 0) {
+          registrosActivos.push("respuestas a encuestas");
+        }
+        if (usuario.encuestasAsignadas.length > 0) {
+          registrosActivos.push("encuestas asignadas");
+        }
+        if (usuario.RegistroVisualizacionContenido.length > 0) {
+          registrosActivos.push("registros de visualización de contenido");
+        }
+        if (usuario.cumplimiento_lecciones.length > 0) {
+          registrosActivos.push("lecciones completadas");
+        }
+        if (usuario.cursoAsignados.length > 0) {
+          registrosActivos.push("cursos asignados");
         }
 
-        // Eliminar usuario de la base de datos
+        if (registrosActivos.length > 0) {
+          resultados.push({
+            success: false,
+            rut,
+            mensaje: `No se puede eliminar el usuario porque tiene actividad en la plataforma: ${registrosActivos.join(
+              ", "
+            )}`,
+          });
+          continue;
+        }
+
+        // Si no hay registros activos, proceder con la eliminación
         await prisma.usuario.delete({
           where: { rut },
         });
+
         resultados.push({
           success: true,
           rut,

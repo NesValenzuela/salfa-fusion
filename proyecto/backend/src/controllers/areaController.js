@@ -111,41 +111,62 @@ export const listarAreas = async (req, res) => {
 export const crearArea_capacitaciones = async (req, res) => {
   try {
     const { nombre_area } = req.body;
+    console.log(req.file);
 
-    // Convertir el archivo a Buffer si existe
-    const imagen = req.file
-      ? Buffer.from(req.file.buffer) // Si usas memoria
-      : null;
+    // Validar que se recibió el nombre del área
+    if (!nombre_area) {
+      return res.status(400).json({ error: "El nombre del área es requerido" });
+    }
 
-    // Crear el área con la imagen como Buffer
+    // Preparar los datos para crear el área
+    const dataToCreate = {
+      nombre_area,
+    };
+
+    // Si hay una imagen, agregarla a los datos
+    if (req.file) {
+      dataToCreate.imagen = Buffer.from(req.file.buffer);
+    }
+
+    // Crear el área con o sin imagen
     const nuevaArea = await prisma.area.create({
-      data: {
-        nombre_area,
-        imagen,
-      },
+      data: dataToCreate,
     });
 
     res.status(201).json({
-      area: {
-        ...nuevaArea,
-        imagen: nuevaArea.imagen ? true : false, // No enviamos la imagen en la respuesta
-      },
       message: "Área creada exitosamente",
+      area: {
+        id_area: nuevaArea.id_area,
+        nombre_area: nuevaArea.nombre_area,
+        tieneImagen: !!nuevaArea.imagen,
+      },
     });
   } catch (error) {
     console.error("Error al crear el Área:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: "Error al crear el área",
+      details: error.message,
+    });
   }
 };
 
 export const modificarArea = async (req, res) => {
-  const { nombre_area } = req.body;
-
   try {
+    console.log("Archivo recibido:", req.file);
+    const { nombre_area } = req.body;
+    const dataToUpdate = {
+      nombre_area,
+    };
+
+    if (req.file) {
+      dataToUpdate.imagen = Buffer.from(req.file.buffer);
+    }
+
     await prisma.area.update({
       where: { id_area: parseInt(req.params.id) },
-      data: { nombre_area },
+      data: dataToUpdate,
     });
+
     res.status(200).json({ message: "Área Modificada exitosamente" });
   } catch (error) {
     console.error("Error al Modificar el Área:", error);
@@ -207,5 +228,20 @@ export const obtenerImagenArea = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener la imagen:", error);
     res.status(500).json({ error: error.message });
+  }
+};
+export const obtenerUsuariosPorArea = async (req, res) => {
+  const { id_area } = req.params;
+  try {
+    const usuarios = await prisma.Usuario.findMany({
+      where: {
+        areaId: parseInt(id_area),
+        rolId: 2,
+      },
+    });
+    res.json(usuarios);
+  } catch (error) {
+    console.error("Error al obtener usuarios por área:", error);
+    res.status(500).json({ error: "Error al obtener usuarios por área" });
   }
 };

@@ -51,6 +51,8 @@ export default function ListadoUsuarios() {
   const [areas, setAreas] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessages, setErrorMessages] = useState([]);
 
   useEffect(() => {
     cargarAreas();
@@ -66,7 +68,7 @@ export default function ListadoUsuarios() {
   useEffect(() => {
     cargarUsuarios(selectedDept);
     if (selectedDept === "Todos") {
-      navigate("/listarUsuarios");
+      navigate("/listar-usuarios");
     } else {
       navigate(`?id_area=${selectedDept}`);
     }
@@ -100,7 +102,7 @@ export default function ListadoUsuarios() {
   const cargarUsuarios = async (area) => {
     setIsLoading(true);
     try {
-      let url = "http://localhost:4000/api/usuarios/";
+      let url = "http://localhost:4000/api/usuarios/all";
       if (area && area !== "Todos") {
         url += `?id_area=${area}`;
       }
@@ -110,6 +112,11 @@ export default function ListadoUsuarios() {
       }
 
       const data = await response.json();
+      if (!data.usuarios) {
+        console.error("No se encontró la propiedad usuarios en la respuesta");
+        setUsuarios([]);
+        return;
+      }
       const usuarios = data.usuarios.map((usr) => ({
         ...usr,
         rut: formatRut(usr.rut),
@@ -129,18 +136,18 @@ export default function ListadoUsuarios() {
       case "administrador":
         // Mostrar solo administradores y trabajadores
         return usuarios.filter((usuario) =>
-          ["administrador", "trabajador"].includes(
+          ["administrador", "usuario"].includes(
             usuario.rol.nombre_rol.toLowerCase()
           )
         );
-      case "trabajador":
+      case "usuario":
         // Mostrar solo usuarios
         return usuarios.filter(
           (usuario) => usuario.rol.nombre_rol.toLowerCase() === "usuario"
         );
       default:
-        window.location.href = "/acceso-denegado";
-        return [];
+        // window.location.href = "/acceso-denegado";
+        return usuarios;
     }
   };
 
@@ -181,14 +188,28 @@ export default function ListadoUsuarios() {
       const response = await axios.delete(
         "http://localhost:4000/api/usuarios/eliminar",
         {
-          data: { ruts: selectedUsers },
+          data: { usuarios: selectedUsers },
         }
       );
 
-      toast.success(response.data.mensaje);
-      // Actualizar la lista de usuarios
+      // Filtrar usuarios que no se pudieron eliminar
+      const usuariosNoEliminados = response.data.resultados
+        .filter((result) => !result.success)
+        .map((result) => {
+          const usuario = usuarios.find((u) => u.rut === result.rut);
+          return `${usuario.nombre} ${usuario.apellido_paterno} ${
+            usuario.apellido_materno || ""
+          }`;
+        });
+
+      if (usuariosNoEliminados.length > 0) {
+        setErrorMessages(usuariosNoEliminados);
+        setShowErrorDialog(true);
+      } else {
+        toast.success(response.data.mensaje);
+      }
+
       await cargarUsuarios(selectedDept);
-      // Limpiar selección
       setSelectedUsers([]);
     } catch (error) {
       toast.error("Error al eliminar usuarios");
@@ -237,7 +258,7 @@ export default function ListadoUsuarios() {
   }
 
   // Si el usuario no tiene un rol válido, redirigir
-  if (!["administrador", "trabajador"].includes(user.role.toLowerCase())) {
+  if (!["administrador", "usuario"].includes(user.role.toLowerCase())) {
     window.location.href = "/acceso-denegado";
     return null;
   }
@@ -286,24 +307,28 @@ export default function ListadoUsuarios() {
               </SelectContent>
             </Select>
 
-            {user.role.toLowerCase() === "administrador" ||
-              (user.role.toLowerCase() === "trabajador" && (
-                <Button
-                  onClick={() => setShowModal(true)}
-                  variant="default"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Nuevo Usuario
-                </Button>
-              ))}
+            {(user.role.toLowerCase() === "administrador" ||
+              user.role.toLowerCase() === "trabajador") && (
+              <Button
+                onClick={() => setShowModal(true)}
+                variant="default"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nuevo Usuario
+              </Button>
+            )}
 
             <Dialog open={showModal} onOpenChange={setShowModal}>
               <DialogContent className="max-w-4xl">
                 <DialogHeader>
                   <DialogTitle>Crear Nuevo Usuario</DialogTitle>
                 </DialogHeader>
-                <N_usuario isModal={true} onClose={() => setShowModal(false)} />
+                <N_usuario
+                  isModal={true}
+                  onClose={() => setShowModal(false)}
+                  userRole={user?.role || ""}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -362,13 +387,10 @@ export default function ListadoUsuarios() {
                     <TableCell>{usuario.correo}</TableCell>
                     <TableCell>{usuario.rol.nombre_rol}</TableCell>
                     <TableCell>
-                      {usuario.Area
-                        ? usuario.Area.nombre_area
-                        : "Sin área asignada"}
+                      {usuario.Area ? usuario.Area.nombre_area : "N/A"}
                     </TableCell>
                     <TableCell>
-                      {user.role.toLowerCase() === "administrador" ||
-                      user.role.toLowerCase() === "trabajador" ? (
+                      {user.role.toLowerCase() === "administrador" ? (
                         <>
                           <EditarUsuario
                             usuario={usuario}
@@ -402,7 +424,7 @@ export default function ListadoUsuarios() {
                             size="icon"
                             className="text-blue-500 ml-2"
                             onClick={() =>
-                              navigate(`/dashboard-perfil-rh/${usuario.rut}`)
+                              navigate(`/vista-perfil-rh/${usuario.rut}`)
                             }
                           >
                             <BarChart2 className="h-4 w-4" />
@@ -435,6 +457,27 @@ export default function ListadoUsuarios() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>No se pudieron eliminar algunos usuarios</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-red-500 mb-4">
+              Los siguientes usuarios tienen registros activos en la plataforma
+              y no pueden ser eliminados:
+            </p>
+            <ul className="list-disc pl-6">
+              {errorMessages.map((nombre, index) => (
+                <li key={index} className="mb-2">
+                  {nombre}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

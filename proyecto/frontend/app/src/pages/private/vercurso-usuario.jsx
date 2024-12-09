@@ -29,6 +29,7 @@ const DetalleCurso = () => {
       setCurso(data);
 
       // Cargar contenidos para cada lección
+      console.log(data);
       data.modulos.forEach((modulo) => {
         modulo.lecciones.forEach((leccion) => {
           fetchContenidosLeccion(leccion.id_leccion);

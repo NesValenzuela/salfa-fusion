@@ -35,6 +35,6 @@ router.put("/api/usuarios/:rut", authMiddleware, actualizarUsuario); //?
 router.post("/api/usuarios/bulk", authMiddleware, crearUsuariosBulk);
 
 // DELETE
-router.delete("/api/usuarios", authMiddleware, eliminarUsuarios);
+router.delete("/api/usuarios/eliminar", authMiddleware, eliminarUsuarios);
 
 export default router;

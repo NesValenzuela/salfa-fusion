@@ -4,7 +4,7 @@ import { Input } from "../../components/ui/input";
 import * as XLSX from "xlsx";
 import axios from "axios";
 
-const UsuariosAdmin = () => {
+const CargaUsuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [errorMessages, setErrorMessages] = useState([]);
 
@@ -207,4 +207,4 @@ const UsuariosAdmin = () => {
   );
 };
 
-export default UsuariosAdmin;
+export default CargaUsuarios;

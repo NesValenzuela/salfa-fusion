@@ -17,6 +17,7 @@ import areaRouter from "./routes/areaRoutes.js";
 import cursoAreaRouter from "./routes/cursoArea.routes.js";
 import cumplimientoLeccionRouter from "./routes/cumplimientoLeccion.routes.js";
 import contenidoRouter from "./routes/contenido.routes.js";
+import iniciarCronJobs from "./controllers/cronJobs.js";
 import path from "path";
 import { fileURLToPath } from "url";
 //import rolRouter from "./routes/rol.routes.js";
@@ -65,6 +66,8 @@ app.use(cursoAreaRouter);
 app.use(cumplimientoLeccionRouter);
 app.use(contenidoRouter);
 app.use(rolRouter);
+
+iniciarCronJobs();
 
 const PORT = process.env.PORT || 4000; // Cambia esto a 4000
 

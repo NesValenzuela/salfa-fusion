@@ -9,7 +9,8 @@
     "proyecto": "file:..",
     "react-bootstrap": "^2.10.5",
     "react-router-dom": "^6.26.2",
-    "recharts": "^2.13.3"
+    "recharts": "^2.13.3",
+    "sonner": "^1.7.0"
   },
   "proxy": "http://localhost:5000/",
   "devDependencies": {

@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 
-const N_usuario = ({ isModal, onClose }) => {
+const N_usuario = ({ isModal, onClose, userRole }) => {
   const [formData, setFormData] = useState({
     rut: "",
     nombre: "",
@@ -54,13 +54,43 @@ const N_usuario = ({ isModal, onClose }) => {
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    setFormData((prevData) => {
+      if (name === "rol") {
+        const selectedRole = roles.find((rol) => String(rol.id_rol) === value);
+        if (selectedRole?.nombre_rol.toLowerCase() === "administrador") {
+          return {
+            ...prevData,
+            [name]: value,
+            area: "",
+          };
+        }
+      }
+      return {
+        ...prevData,
+        [name]: value,
+      };
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isRutValid) {
-      alert("Por favor ingresa un RUT válido.");
+    if (
+      !formData.rut ||
+      !formData.nombre ||
+      !formData.apellido_paterno ||
+      !formData.apellido_materno ||
+      !formData.correo ||
+      !formData.rol
+    ) {
+      alert("Todos los campos son obligatorios");
+      return;
+    }
+    const esAdmin =
+      roles
+        .find((rol) => String(rol.id_rol) === formData.rol)
+        ?.nombre_rol.toLowerCase() === "administrador";
+    if (!esAdmin && !formData.area) {
+      alert("El área es obligatoria para usuarios no administradores");
       return;
     }
 

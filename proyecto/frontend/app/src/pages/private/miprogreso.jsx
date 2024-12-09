@@ -23,7 +23,7 @@ import {
 } from "../../components/ui/avatar";
 import { Mail } from "lucide-react";
 
-export default function PerfilUsuario() {
+export default function MiProgreso() {
   const { user } = useUser();
   const [usuario, setUsuario] = useState(null);
 

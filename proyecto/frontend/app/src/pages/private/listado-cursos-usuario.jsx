@@ -1,311 +1,302 @@
-//import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Badge } from "@/components/ui/badge";
-//import { Briefcase, GraduationCap, Mail, MapPin, Phone } from "lucide-react";
-//import { Mail, MapPin } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import capacitaciones from "@/assets/capacitacion.png";
 import { Link } from "react-router-dom";
-// import { PublishAlert, DisableAlert } from "../../components/ui/mensaje_alerta";
-import React, { useState } from "react";
 import { Button } from "../../components/ui/button";
+import { Toaster, toast } from "sonner";
+import { useUser } from "../../contexts/UserContext";
 import {
   Card,
+  CardHeader,
+  CardTitle,
   CardContent,
   CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "../../components/ui/card";
+import { Search, LayoutGrid, LayoutList } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/ui/select";
-// import { Progress } from "@/components/ui/progress";
-import { LayoutList, LayoutGrid } from "lucide-react";
+} from "@/components/ui/select";
 
-// IMÁGENES
-import capacitacion from "../../assets/capacitacion.png";
-import mantenimiento from "../../assets/mantenimiento.png";
-import seguridad from "../../assets/seguridad.png";
-
-/* interface CardProps {
-  image: string;
-  title: string;
-  description: string;
-  link: string;
-} */
-
-/* const worker = {
-  name: "José Barra",
-  position: "Ingeniero de Mantenimiento",
-  email: "jo.barra@salfamantenciones.com",
-  // phone: "+569",
-  location: "Talca, Chile",
-  avatar: "/placeholder.svg?height=100&width=100",
-}; */
-
-const coursesData = [
-  {
-    id: 1,
-    title: "Capacitación Minera",
-    description:
-      "Este curso está diseñado para proporcionar una comprensión integral de la minería, abordando desde sus fundamentos históricos hasta las tecnologías modernas utilizadas en la industria. Los participantes aprenderán sobre los diferentes tipos de minerales, los procesos ...",
-    image: capacitacion,
-    modules: [
-      {
-        id: 1,
-        title: "Fundamentos de Minería",
-        lessons: [
-          { id: 1, title: "Tipos de minerales", completed: true },
-          { id: 2, title: "Procesos de extracción", completed: true },
-        ],
-      },
-      {
-        id: 2,
-        title: "Equipos mineros",
-        lessons: [
-          {
-            id: 3,
-            title: "Mauinaria y Herramientas utilizadas",
-            completed: true,
-          },
-          { id: 4, title: "Mantenimiento básico en equipos", completed: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Mantención de maquinaria",
-    description:
-      "El curso de mantención de maquinaria está orientado a equipar a los participantes con los conocimientos y habilidades necesarios para llevar a cabo un mantenimiento efectivo. Se cubrirán los fundamentos del mantenimiento, incluidas las técnicas preventivas y correctivas...",
-    image: seguridad,
-    modules: [
-      {
-        id: 3,
-        title: "Mantenimiento preventivo",
-        lessons: [
-          { id: 5, title: "Inspecciones y revisiones", completed: false },
-          { id: 6, title: "Registro de mantenimiento", completed: false },
-        ],
-      },
-      {
-        id: 4,
-        title: "Diagnóstico de fallas",
-        lessons: [
-          {
-            id: 7,
-            title: "Identificación de problemas comunes",
-            completed: false,
-          },
-          { id: 8, title: "Técnicas de diagnóstico", completed: false },
-          { id: 9, title: "Soluciones y reemplazos", completed: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: "Seguridad Industrial",
-    description:
-      "Este curso se enfoca en la seguridad en el entorno laboral, enseñando a los participantes sobre la importancia de las normativas de seguridad y la evaluación de riesgos. Se examinarán los equipos de protección personal y su correcto uso, así como la prevención de accidentes...",
-    image: mantenimiento,
-    modules: [
-      {
-        id: 5,
-        title: "Principios de seguridad",
-        lessons: [
-          { id: 10, title: "Legislación y normativas", completed: true },
-          { id: 11, title: "Evaluación de riesgos", completed: true },
-        ],
-      },
-      {
-        id: 6,
-        title: "Equipos de protección personal (EPP)",
-        lessons: [
-          { id: 12, title: "Tipos de EPP y su uso", completed: true },
-          {
-            id: 13,
-            title: "Concientización y capacitación en EPP",
-            completed: true,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 4,
-    title: "Capacitación Avanzada",
-    description:
-      "El curso de capacitación avanzada está diseñado para aquellos que buscan profundizar en temas tecnológicos y de liderazgo en el sector minero. Los participantes explorarán las tecnologías emergentes, como la inteligencia artificial y el análisis de datos, y aprenderán a...",
-    image: seguridad,
-    modules: [
-      {
-        id: 5,
-        title: "Tecnologías emergentes",
-        lessons: [
-          { id: 14, title: "IA y minería", completed: false },
-          {
-            id: 15,
-            title: "Automatización de procesos mineros",
-            completed: false,
-          },
-        ],
-      },
-      {
-        id: 6,
-        title: "Liderazgo y gestión de equipos",
-        lessons: [
-          { id: 16, title: "Habilidades de Liderazgo", completed: true },
-          { id: 17, title: "Dinámicas de grupo", completed: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: 5,
-    title: "Mantenimiento Preventivo",
-    description:
-      "Este curso proporciona a los participantes un entendimiento completo del mantenimiento preventivo, su importancia y su aplicación práctica. Se enseñarán conceptos básicos, ejecución de procedimientos y técnicas para llevar un registro efectivo del mantenimiento. Los...",
-    image: mantenimiento,
-    modules: [
-      {
-        id: 5,
-        title: "Ejecución del Mantenimiento",
-        lessons: [
-          {
-            id: 18,
-            title: "Registro y monitoreo de actividades",
-            completed: true,
-          },
-          {
-            id: 19,
-            title: "Análisis de resultados",
-            completed: true,
-          },
-        ],
-      },
-      {
-        id: 6,
-        title: "Mejora continua",
-        lessons: [
-          {
-            id: 20,
-            title: "Evaluación del proceso de mantenimiento",
-            completed: true,
-          },
-          {
-            id: 21,
-            title: "Implementación de Mejores Prácticas",
-            completed: false,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 6,
-    title: "Seguridad y Prevención",
-    description:
-      "El curso de seguridad y prevención se centra en la creación de un entorno laboral seguro. Los participantes aprenderán sobre la importancia de la seguridad en el trabajo, las normativas aplicables y cómo evaluar riesgos laborales. Se cubrirán técnicas para el manejo de emergencias...",
-    image: capacitacion,
-    modules: [
-      {
-        id: 5,
-        title: "Manejo de emergencias",
-        lessons: [
-          { id: 22, title: "Planes de Emergencia", completed: true },
-          { id: 23, title: "Simulacros y Prácticas", completed: true },
-        ],
-      },
-      {
-        id: 6,
-        title: "Promoción de una cultura de seguridad",
-        lessons: [
-          { id: 12, title: "Capacitación y Conciencia", completed: true },
-          { id: 13, title: "Comunicación en Deguridad", completed: false },
-        ],
-      },
-    ],
-  },
-];
-
-export default function ListadoCursosUsuario() {
-  const [filter, setFilter] = useState("all");
+const HomeUsuarios = () => {
+  const { user } = useUser();
+  const [cursos, setCursos] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("todos");
   const [view, setView] = useState("grid");
+  const [imagenesCursos, setImagenesCursos] = useState({});
 
-  const isCourseCompleted = (course) => {
-    return course.modules.every((module) =>
-      module.lessons.every((lesson) => lesson.completed)
-    );
-  };
+  const filteredCursos = cursos.filter((curso) => {
+    const matchesSearch = curso.nombre_curso
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
 
-  const filteredCourses = coursesData.filter((course) => {
-    if (filter === "all") return true;
-    if (filter === "completed") return isCourseCompleted(course);
-    if (filter === "incomplete") return !isCourseCompleted(course);
-    return true;
+    const matchesStatus =
+      filterStatus === "todos"
+        ? true
+        : filterStatus === "completados"
+        ? curso.completado
+        : !curso.completado;
+
+    return matchesSearch && matchesStatus;
   });
 
-  return (
-    <>
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Todos los Cursos</h1>
+  const fetchCursos = async (userRut) => {
+    try {
+      const responseAsignados = await fetch(
+        `http://localhost:4000/api/usuarioLecciones/${userRut}`
+      );
+      if (!responseAsignados.ok) {
+        throw new Error(`HTTP error! status: ${responseAsignados.status}`);
+      }
+      const usuarioData = await responseAsignados.json();
 
-        <div className="flex justify-between items-center mb-4">
-          <div className="space-x-2">
-            <Button
-              variant={view === "list" ? "default" : "outline"}
-              onClick={() => setView("list")}
-            >
-              <LayoutList className="h-4 w-4 mr-2" />
-              Lista
-            </Button>
-            <Button
-              variant={view === "grid" ? "default" : "outline"}
-              onClick={() => setView("grid")}
-            >
-              <LayoutGrid className="h-4 w-4 mr-2" />
-              Cuadrícula
-            </Button>
+      const cursosAsignados =
+        usuarioData.cursoAsignados?.map((ca) => ({
+          ...ca.curso,
+          completado: calcularCompletado(ca.curso),
+        })) || [];
+
+      setCursos(cursosAsignados);
+    } catch (error) {
+      console.error("Error al obtener los cursos:", error);
+      toast.error("Error al cargar los cursos");
+    }
+  };
+
+  const calcularCompletado = (curso) => {
+    if (!curso.modulos) return false;
+
+    const todasLasLecciones = curso.modulos.flatMap(
+      (modulo) => modulo.lecciones
+    );
+    if (todasLasLecciones.length === 0) return false;
+
+    const leccionesCompletadas = todasLasLecciones.filter(
+      (leccion) =>
+        leccion.Cumplimiento_leccion &&
+        leccion.Cumplimiento_leccion.length > 0 &&
+        leccion.Cumplimiento_leccion[0].estado
+    ).length;
+
+    return leccionesCompletadas === todasLasLecciones.length;
+  };
+
+  useEffect(() => {
+    if (user?.rut) {
+      fetchCursos(user.rut);
+    }
+  }, [user?.rut]);
+
+  useEffect(() => {
+    const cargarImagenesCursos = async () => {
+      try {
+        const cursosIds = filteredCursos.map((curso) => curso.id_curso);
+
+        const response = await fetch(
+          "http://localhost:4000/api/cursos/imagenes",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ cursos: cursosIds }),
+          }
+        );
+
+        const data = await response.json();
+        const imagenesMap = data.reduce((acc, img) => {
+          acc[img.id_curso] = img;
+          return acc;
+        }, {});
+
+        setImagenesCursos(imagenesMap);
+      } catch (error) {
+        console.error("Error al cargar imágenes de los cursos:", error);
+      }
+    };
+
+    if (filteredCursos.length > 0) {
+      cargarImagenesCursos();
+    }
+  }, [filteredCursos]);
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Toaster />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-6">
+            Cursos Disponibles
+          </h2>
+
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar cursos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-all duration-200"
+                />
+              </div>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los cursos</SelectItem>
+                  <SelectItem value="completados">Completados</SelectItem>
+                  <SelectItem value="pendientes">No completados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end mb-4">
+            <div className="space-x-2">
+              <Button
+                variant={view === "list" ? "default" : "outline"}
+                onClick={() => setView("list")}
+                size="sm"
+              >
+                <LayoutList className="h-4 w-4 mr-2" />
+                Lista
+              </Button>
+              <Button
+                variant={view === "grid" ? "default" : "outline"}
+                onClick={() => setView("grid")}
+                size="sm"
+              >
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Cuadrícula
+              </Button>
+            </div>
+          </div>
+
+          <div
+            className={`
+                        ${
+                          view === "grid"
+                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                            : "space-y-4"
+                        }
+                    `}
+          >
+            {filteredCursos.length > 0 ? (
+              filteredCursos.map((curso) => (
+                <Card
+                  key={curso.id_curso}
+                  className={`
+                                        transition-all duration-200 hover:shadow-lg
+                                        ${
+                                          view === "list"
+                                            ? "flex flex-row items-start"
+                                            : "flex flex-col hover:scale-[1.02]"
+                                        }
+                                    `}
+                >
+                  <CardHeader
+                    className={`
+                                        ${view === "list" ? "w-1/4" : "p-0"}
+                                    `}
+                  >
+                    {!imagenesCursos[curso.id_curso] ? (
+                      <div className="w-full h-48 bg-gray-200 rounded-t-lg animate-pulse" />
+                    ) : imagenesCursos[curso.id_curso].tipo === "area" ? (
+                      <img
+                        className={`
+                          object-cover rounded-t-lg
+                          ${
+                            view === "grid"
+                              ? "w-full h-48"
+                              : "h-full w-full rounded-l-lg rounded-t-none"
+                          }
+                        `}
+                        src={`http://localhost:4000/api/area/imagen/${
+                          imagenesCursos[curso.id_curso].idArea
+                        }`}
+                        alt={curso.nombre_curso}
+                      />
+                    ) : (
+                      <div
+                        className={`
+                        flex items-center justify-center bg-gray-200 rounded-t-lg
+                        ${
+                          view === "grid"
+                            ? "w-full h-48"
+                            : "h-full w-full rounded-l-lg rounded-t-none"
+                        }
+                      `}
+                      >
+                        <span className="text-6xl font-bold text-gray-500">
+                          {imagenesCursos[curso.id_curso].letra}
+                        </span>
+                      </div>
+                    )}
+                  </CardHeader>
+                  <div
+                    className={`
+                                        flex flex-col flex-1
+                                        ${view === "list" ? "p-6" : "p-4"}
+                                    `}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <CardTitle className="text-xl font-bold">
+                        {curso.nombre_curso}
+                      </CardTitle>
+                      {curso.completado && (
+                        <span className="px-2 py-1 bg-green-100 text-green-600 text-xs font-medium rounded-full">
+                          Completado
+                        </span>
+                      )}
+                    </div>
+                    <CardDescription className="text-gray-600 mb-4">
+                      {curso.descripcion_curso}
+                    </CardDescription>
+                    <div className="mt-auto">
+                      <p className="text-sm text-gray-500 mb-4">
+                        Fecha límite:{" "}
+                        {new Date(curso.fecha_limite).toLocaleDateString()}
+                      </p>
+                      <Link
+                        to={`/vercurso-usuario/${curso.id_curso}`}
+                        className="w-full"
+                      >
+                        <Button
+                          variant="outline"
+                          className="w-full hover:bg-primary hover:text-white transition-colors"
+                        >
+                          Ver Detalles
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center text-gray-500 py-8">
+                No se encontraron cursos que coincidan con los criterios de
+                búsqueda
+              </div>
+            )}
           </div>
         </div>
-
-        <div
-          className={`grid gap-4 ${
-            view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
-          }`}
-        >
-          {filteredCourses.map((course) => (
-            <Card key={course.id}>
-              <CardHeader>
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-40 object-cover mb-4 rounded-md"
-                />
-                <CardTitle>{course.title}</CardTitle>
-                <CardDescription>{course.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm mt-2">
-                  Módulos: {course.modules.length} | Lecciones:{" "}
-                  {course.modules.reduce(
-                    (acc, module) => acc + module.lessons.length,
-                    0
-                  )}
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Link to="/vercurso">
-                  <Button variant="outline">Ver detalles</Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
       </div>
-    </>
+    </div>
   );
-}
+};
+
+export default HomeUsuarios;

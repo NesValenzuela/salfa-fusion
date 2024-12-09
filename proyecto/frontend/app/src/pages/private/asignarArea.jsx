@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 // Modal de confirmación
 const ConfirmationModal = ({ isOpen, message, onConfirm, onCancel }) => {
@@ -42,10 +43,9 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
-  const [actionType, setActionType] =
-    (useState < "assign") | "remove" | ("none" > "none");
+  const [actionType, setActionType] = useState("none");
   const [areaToRemove, setAreaToRemove] = useState(null); // Para almacenar área a eliminar
-
+  const navigate = useNavigate();
   // Cargar áreas disponibles y asignadas al curso
   useEffect(() => {
     const fetchAreas = async () => {
@@ -68,10 +68,18 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
         const assignedAreaIds = new Set(
           assignedAreas.map((area) => area.id_area)
         );
-        const availableAreas = allAreas.filter(
-          (area) => !assignedAreaIds.has(area.id_area)
+        const availableAreas = await Promise.all(
+          allAreas.map(async (area) => {
+            const response3 = await fetch(
+              `http://localhost:4000/api/area/${area.id_area}/usuarios`
+            );
+            const usuarios = await response3.json();
+            return !assignedAreaIds.has(area.id_area) && usuarios.length > 0
+              ? area
+              : null;
+          })
         );
-        setAreasDisponibles(availableAreas);
+        setAreasDisponibles(availableAreas.filter((area) => area !== null));
       } catch (error) {
         console.error("Error fetching areas:", error);
         toast.error("Error al cargar las áreas");
@@ -82,7 +90,7 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
   }, [cursoId]);
 
   // Lógica para quitar área
-  const handleRemoveArea = (area) => {
+  const handleRemoveArea = async (area) => {
     setAreaToRemove(area);
     setModalMessage(
       `¿Estás seguro de que deseas eliminar el área "${area.nombre_area}" de este curso?`
@@ -114,10 +122,10 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
           {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ areaId: areaToRemove.id_area }),
+            body: JSON.stringify({ areaId: [areaToRemove.id_area] }),
           }
         );
-        if (!response.ok) throw new Error("Failed to remove area");
+        if (!response.ok) throw new Error("Error al desasignar el área");
 
         // Actualizar las listas
         setAreasSeleccionadas((prev) =>
@@ -130,14 +138,15 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
         );
 
         toast.success("Área desasignada correctamente");
+        onCreate();
       } catch (error) {
         console.error("Error removing area:", error);
         toast.error("Error al desasignar el área");
       } finally {
         setIsLoading(false);
+        setIsModalOpen(false); // Cerrar el modal
       }
     }
-    setIsModalOpen(false);
   };
 
   const cancelAction = () => {
@@ -161,9 +170,9 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
       );
 
       if (!response.ok) throw new Error("Error al asignar áreas");
-
+      onCreate(); // Notificar al componente padre para mostrar el toast
+      setIsModalOpen(false);
       toast.success("Áreas asignadas correctamente");
-      onCreate(); // Notificar al componente padre
     } catch (error) {
       console.error("Error saving areas:", error);
       toast.error("Error al asignar las áreas");
@@ -175,7 +184,15 @@ const AsignarAreaACurso = ({ cursoId, onCreate }) => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Asignar Áreas al Curso</CardTitle>
+        <CardTitle className="flex items-center">
+          Asignar Áreas al Curso
+          <span
+            className="ml-2 text-yellow-500 cursor-pointer"
+            title="Las áreas disponibles son aquellas donde hay usuarios existentes o disponibles que puedan completar el curso"
+          >
+            ❗
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Selector de áreas */}

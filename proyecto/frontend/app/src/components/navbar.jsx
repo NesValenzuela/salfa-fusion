@@ -91,13 +91,17 @@ const Navbar = () => {
     const capacitacionLinks = {
       title: "Capacitación",
       links: [
-        { to: "/cursos", text: "Cursos" },
-        { to: "/listado-cursos-usuario", text: "Mis Cursos" },
+        ...(userRole === "Usuario"
+          ? [
+              { to: "/miprogreso", text: "Mi Progreso" },
+              { to: "/listado-cursos-usuario", text: "Mis Cursos" },
+            ]
+          : []),
         ...(userRole === "Administrador"
           ? [
-              { to: "/agregar-cursos", text: "Agregar Cursos" },
-              { to: "/cursos-admin", text: "Administrar Cursos" },
-              { to: "/listado-cursos", text: "Listado de Cursos" },
+              { to: "/admin-cursos", text: "Gestionar Cursos" },
+              { to: "/listar-areas", text: "Gestionar Areas" },
+              { to: "/listar-usuarios", text: "Gestion Usuarios" },
               { to: "/dashboard-rh", text: "Dashboard RRHH" },
             ]
           : []),

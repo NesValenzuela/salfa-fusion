@@ -7,22 +7,29 @@ export const asignarCursoAArea = async (req, res) => {
   const cursoID = parseInt(req.params.cursoId);
 
   try {
-    // Primero eliminamos todas las asignaciones existentes
-    await prisma.cursoArea.deleteMany({
+    // Obtener las asignaciones existentes
+    const asignacionesExistentes = await prisma.cursoArea.findMany({
       where: { id_curso: cursoID },
+      select: { id_area: true },
     });
 
-    // Luego creamos las nuevas asignaciones
-    const nuevasAsignaciones = areaIds.map((areaId) => ({
-      id_curso: cursoID,
-      id_area: areaId,
-    }));
+    const idsExistentes = new Set(asignacionesExistentes.map((a) => a.id_area));
 
-    await prisma.cursoArea.createMany({
-      data: nuevasAsignaciones,
-    });
+    // Filtrar las nuevas asignaciones para incluir solo las que no existen
+    const nuevasAsignaciones = areaIds
+      .filter((areaId) => !idsExistentes.has(areaId))
+      .map((areaId) => ({
+        id_curso: cursoID,
+        id_area: areaId,
+      }));
 
-    // Actualizar asignaciones de usuarios y cumplimientos
+    // Crear solo las nuevas asignaciones
+    if (nuevasAsignaciones.length > 0) {
+      await prisma.cursoArea.createMany({
+        data: nuevasAsignaciones,
+      });
+    }
+
     await actualizarAsignacionesUsuarios(cursoID, areaIds);
 
     res.status(200).json({ message: "Áreas actualizadas correctamente" });
@@ -34,7 +41,6 @@ export const asignarCursoAArea = async (req, res) => {
 
 async function actualizarAsignacionesUsuarios(cursoID, areaIds) {
   try {
-    // Obtener usuarios de las áreas seleccionadas
     const usuariosDeAreas = await prisma.usuario.findMany({
       where: { areaId: { in: areaIds } },
       select: { rut: true },
@@ -59,31 +65,38 @@ async function actualizarAsignacionesUsuarios(cursoID, areaIds) {
       modulo.lecciones.map((leccion) => leccion.id_leccion)
     );
 
-    // Eliminar asignaciones anteriores
-    await prisma.$transaction([
-      // Eliminar asignaciones de cursos
-      prisma.cursoAsignado.deleteMany({
-        where: { cursoId: cursoID },
-      }),
-      // Eliminar cumplimientos de lecciones
-      prisma.cumplimiento_leccion.deleteMany({
-        where: {
-          AND: [
-            { usuarioId: { in: usuariosDeAreas.map((u) => u.rut) } },
-            { leccionId: { in: leccionIds } },
-          ],
-        },
-      }),
-    ]);
-
     // Crear nuevas asignaciones si hay usuarios
     if (usuariosDeAreas.length > 0) {
       // Preparar datos para las asignaciones de cursos
       const cursoAsignaciones = usuariosDeAreas.map((usuario) => ({
         usuarioId: usuario.rut,
         cursoId: cursoID,
-        fecha_asignacion: new Date(),
+        fecha_asignacion: new Date(), // Mantener la fecha de asignación
       }));
+
+      // Filtrar asignaciones existentes
+      const asignacionesExistentes = await prisma.cursoAsignado.findMany({
+        where: {
+          cursoId: cursoID,
+          usuarioId: { in: usuariosDeAreas.map((u) => u.rut) },
+        },
+      });
+
+      const idsExistentes = new Set(
+        asignacionesExistentes.map((a) => a.usuarioId)
+      );
+
+      // Filtrar solo las nuevas asignaciones
+      const nuevasAsignaciones = cursoAsignaciones.filter(
+        (asignacion) => !idsExistentes.has(asignacion.usuarioId)
+      );
+
+      // Crear todas las nuevas asignaciones en una transacción
+      if (nuevasAsignaciones.length > 0) {
+        await prisma.cursoAsignado.createMany({
+          data: nuevasAsignaciones,
+        });
+      }
 
       // Preparar datos para los cumplimientos de lecciones
       const cumplimientoLecciones = usuariosDeAreas.flatMap((usuario) =>
@@ -95,15 +108,33 @@ async function actualizarAsignacionesUsuarios(cursoID, areaIds) {
         }))
       );
 
-      // Crear todas las asignaciones en una transacción
-      await prisma.$transaction([
-        prisma.cursoAsignado.createMany({
-          data: cursoAsignaciones,
-        }),
-        prisma.cumplimiento_leccion.createMany({
-          data: cumplimientoLecciones,
-        }),
-      ]);
+      // Filtrar cumplimientos existentes
+      const cumplimientosExistentes =
+        await prisma.cumplimiento_leccion.findMany({
+          where: {
+            usuarioId: { in: usuariosDeAreas.map((u) => u.rut) },
+            leccionId: { in: leccionIds },
+          },
+        });
+
+      const idsCumplimientosExistentes = new Set(
+        cumplimientosExistentes.map((c) => `${c.usuarioId}-${c.leccionId}`)
+      );
+
+      // Filtrar solo los nuevos cumplimientos
+      const nuevosCumplimientos = cumplimientoLecciones.filter(
+        (cumplimiento) =>
+          !idsCumplimientosExistentes.has(
+            `${cumplimiento.usuarioId}-${cumplimiento.leccionId}`
+          )
+      );
+
+      // Crear todos los nuevos cumplimientos en una transacción
+      if (nuevosCumplimientos.length > 0) {
+        await prisma.cumplimiento_leccion.createMany({
+          data: nuevosCumplimientos,
+        });
+      }
     }
   } catch (error) {
     console.error("Error en actualizarAsignacionesUsuarios:", error);
@@ -140,7 +171,7 @@ export const obtenerAreasCurso = async (req, res) => {
 
 export const deleteAsignacion = async (req, res) => {
   const { id } = req.params; // id del curso
-  const { areaId } = req.body; // id del área
+  const { areaId } = req.body; // Asegúrate de que se envíen los areaIds
 
   try {
     // Verificar que el curso existe
@@ -149,7 +180,9 @@ export const deleteAsignacion = async (req, res) => {
       include: {
         modulos: {
           include: {
-            lecciones: true,
+            lecciones: {
+              select: { id_leccion: true },
+            },
           },
         },
       },
@@ -159,52 +192,42 @@ export const deleteAsignacion = async (req, res) => {
       return res.status(404).json({ message: "Curso no encontrado" });
     }
 
-    // Obtener todos los IDs de lecciones del curso
+    // Verificar que modulos y lecciones están definidos
+    if (!curso.modulos || curso.modulos.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No hay módulos disponibles para este curso." });
+    }
+
+    // Obtener lista plana de IDs de lecciones
     const leccionIds = curso.modulos.flatMap((modulo) =>
       modulo.lecciones.map((leccion) => leccion.id_leccion)
     );
 
-    // Obtener usuarios del área específica
-    const usuariosDelArea = await prisma.usuario.findMany({
+    // Verificar si hay cumplimientos de lecciones completadas para los usuarios de esta área
+    const cumplimientos = await prisma.cumplimiento_leccion.findFirst({
+      where: {
+        leccionId: { in: leccionIds },
+        estado: true, // Solo buscamos cumplimientos donde el estado es true
+      },
+    });
+
+    if (cumplimientos) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "No se puede desasignar el área porque hay usuarios que han completado al menos una lección del curso.",
+        });
+    }
+    const usuariosDeArea = await prisma.usuario.findMany({
       where: {
         areaId: parseInt(areaId),
+        rolId: 3,
       },
-      select: {
-        rut: true,
-      },
+      select: { rut: true },
     });
 
-    const usuarioIds = usuariosDelArea.map((user) => user.rut);
-
-    // Eliminar registros de Cumplimiento_leccion
-    await prisma.cumplimiento_leccion.deleteMany({
-      where: {
-        AND: [
-          {
-            usuarioId: {
-              in: usuarioIds,
-            },
-          },
-          {
-            leccionId: {
-              in: leccionIds,
-            },
-          },
-        ],
-      },
-    });
-
-    // Eliminar las asignaciones de los usuarios al curso
-    await prisma.cursoAsignado.deleteMany({
-      where: {
-        cursoId: curso.id_curso,
-        usuario: {
-          areaId: parseInt(areaId),
-        },
-      },
-    });
-
-    // Eliminar la relación entre el curso y el área
     await prisma.cursoArea.delete({
       where: {
         id_curso_id_area: {
@@ -213,14 +236,23 @@ export const deleteAsignacion = async (req, res) => {
         },
       },
     });
-
-    res.json({
-      message:
-        "Área desasignada, usuarios y registros de cumplimiento eliminados correctamente",
+    await prisma.cursoAsignado.deleteMany({
+      where: {
+        cursoId: curso.id_curso,
+        usuarioId: { in: usuariosDeArea.map((u) => u.rut) },
+      },
     });
+    await prisma.cumplimiento_leccion.deleteMany({
+      where: {
+        leccionId: { in: leccionIds },
+        usuarioId: { in: usuariosDeArea.map((u) => u.rut) },
+      },
+    });
+
+    res.json({ message: "Área desasignada correctamente" });
   } catch (error) {
-    console.error("Error al desasignar área:", error);
-    res.status(500).json({ message: "Error al desasignar el curso del área" });
+    console.error("Error al desasignar áreas:", error);
+    res.status(500).json({ message: "Error al desasignar áreas" });
   }
 };
 

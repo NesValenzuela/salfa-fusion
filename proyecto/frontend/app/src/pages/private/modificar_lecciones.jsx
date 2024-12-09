@@ -13,10 +13,9 @@ const Modificar_lecciones = () => {
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
-        const response =
-          (await axios.get) <
-          Leccion >
-          `http://localhost:4000/modulos/${moduloId}/lecciones/${leccionId}`;
+        const response = await axios.get(
+          `http://localhost:4000/modulos/${moduloId}/lecciones/${leccionId}`
+        );
         setLeccion(response.data);
       } catch (error) {
         setError(

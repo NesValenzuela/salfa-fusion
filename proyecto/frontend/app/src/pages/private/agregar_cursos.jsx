@@ -12,10 +12,13 @@ const agregar_cursos = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const fechaActual = new Date();
+    fechaActual.setHours(fechaActual.getHours() - 3);
+
     const nuevoCurso = {
       nombre_curso: nombreCurso,
       descripcion_curso: descripcionCurso,
-      fecha_creacion: new Date().toISOString(),
+      fecha_creacion: fechaActual.toISOString(), // Usar la fecha ajustada
       fecha_limite: fechaLimite ? new Date(fechaLimite).toISOString() : null,
       estado_curso: false, // Por defecto
     };
@@ -29,7 +32,7 @@ const agregar_cursos = () => {
       console.log("Curso creado:", response.data);
 
       // Redirigir al listado de cursos
-      navigate("/listado_cursos");
+      navigate("/listado-cursos");
     } catch (error) {
       console.error("Error al crear el curso:", error);
     }
@@ -93,13 +96,14 @@ const agregar_cursos = () => {
               id="fechaLimite"
               className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={fechaLimite}
-              onChange={(e) => setFechaLimite(e.target.value)} // Actualiza el estado
+              onChange={(e) => setFechaLimite(e.target.value)}
+              min={new Date().toISOString().split("T")[0]} // Evitar fechas pasadas
             />
           </div>
 
           {/* Botones de volver y crear */}
           <div className="flex justify-center space-x-2">
-            <Link to="/listado_cursos">
+            <Link to="/admin-cursos">
               <button
                 type="button"
                 className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"

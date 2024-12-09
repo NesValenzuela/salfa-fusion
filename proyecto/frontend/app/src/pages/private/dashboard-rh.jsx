@@ -42,9 +42,6 @@ import html2canvas from "html2canvas";
 
 // Datos de ejemplo
 const userData = {
-  total: 500,
-  active: 450,
-  inactive: 50,
   byDepartment: [
     { name: "Mantención", total: 150, active: 140 },
     { name: "Carga", total: 100, active: 95 },
@@ -193,67 +190,6 @@ export default function DashboardRRHH() {
           <TabsTrigger value="courses">Cursos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="users">
-          <div className="pdf-export">
-            <div className="grid gap-4 md:grid-cols-3 mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total de Usuarios
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{userData.total}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Usuarios Interactivos
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{userData.active}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Usuarios Inactivos
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{userData.inactive}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Usuarios por Área</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={filteredUserData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="total" fill="#8884d8" name="Total" />
-                      <Bar dataKey="active" fill="#82ca9d" name="Activos" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
         {/* <TabsContent value="courses"> */}
         <div className="pdf-export">
           <div className="grid gap-4 md:grid-cols-3 mb-6">
@@ -343,25 +279,62 @@ export default function DashboardRRHH() {
             <div className="grid gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Cursos Completados por Departamento</CardTitle>
+                  <CardTitle>Estado de Cursos por Área</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={filteredCourseData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar
-                          dataKey="completed"
-                          fill="#8884d8"
-                          name="Completados"
-                        />
-                        <Bar dataKey="total" fill="#82ca9d" name="Total" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-4">
+                    {filteredCourseData.map((dept, index) => (
+                      <div key={dept.name} className="h-[300px] my-7">
+                        <h3 className="text-center font-medium mb-2">
+                          {dept.name}
+                        </h3>
+                        {dept.total > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  {
+                                    name: "Completados",
+                                    value: dept.completed,
+                                  },
+                                  {
+                                    name: "En Progreso",
+                                    value: dept.total - dept.completed,
+                                  },
+                                ]}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                outerRadius={80}
+                                fill="#1774d8"
+                                dataKey="value"
+                                label={({ name, value, percent }) =>
+                                  `${name}: ${value} (${(percent * 100).toFixed(
+                                    0
+                                  )}%)`
+                                }
+                              >
+                                <Cell fill={COLORS[index % COLORS.length]} />
+                                <Cell
+                                  fill={`${COLORS[index % COLORS.length]}80`}
+                                />
+                              </Pie>
+                              <Tooltip
+                                formatter={(value) => [`${value} cursos`]}
+                              />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="h-full flex items-center justify-center">
+                            <div className="text-center text-gray-500">
+                              <p className="mb-2">⚠️</p>
+                              <p>Esta área no tiene cursos asociados</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -369,32 +342,41 @@ export default function DashboardRRHH() {
               {selectedDepartment === "Todos" && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Distribución de Cursos Completados</CardTitle>
+                    <CardTitle>Resumen General de Cursos</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[400px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={filteredCourseData}
+                            data={[
+                              {
+                                name: "Completados",
+                                value: courseStats?.completed || 0,
+                              },
+                              {
+                                name: "En Progreso",
+                                value:
+                                  (courseStats?.total || 0) -
+                                  (courseStats?.completed || 0),
+                              },
+                            ]}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
                             outerRadius={120}
                             fill="#8884d8"
-                            dataKey="completed"
-                            label={({ name, percent }) =>
-                              `${name} ${(percent * 100).toFixed(0)}%`
+                            dataKey="value"
+                            label={({ name, value, percent }) =>
+                              `${name}: ${value} (${(percent * 100).toFixed(
+                                0
+                              )}%)`
                             }
                           >
-                            {filteredCourseData.map((_, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ))}
+                            <Cell fill="#8884d8" />
+                            <Cell fill="#82ca9d" />
                           </Pie>
-                          <Tooltip />
+                          <Tooltip formatter={(value) => [`${value} cursos`]} />
                           <Legend />
                         </PieChart>
                       </ResponsiveContainer>
@@ -467,14 +449,24 @@ export default function DashboardRRHH() {
                                 }`}
                                 style={{
                                   width: `${
-                                    (curso.usuariosCompletados /
-                                      curso.usuariosAsignados) *
-                                    100
+                                    curso.usuariosAsignados === 0
+                                      ? 0
+                                      : (curso.usuariosCompletados /
+                                          curso.usuariosAsignados) *
+                                        100
                                   }%`,
                                 }}
                               />
                             </div>
                           </div>
+                          <Button
+                            className="w-full mt-4 bg-purple-500"
+                            onClick={() =>
+                              (window.location.href = `/usuarios-curso/${curso.id}`)
+                            }
+                          >
+                            Ver Detalles de Usuarios
+                          </Button>
                         </CardContent>
                       </Card>
                     ))}

@@ -25,6 +25,7 @@ export default function Vercurso() {
   const [expandedModulo, setExpandedModulo] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isCursoHabilitable, setIsCursoHabilitable] = useState(false);
 
   useEffect(() => {
     const obtenerCursoYModulos = async () => {
@@ -35,11 +36,32 @@ export default function Vercurso() {
             `http://localhost:4000/cursos/${id}`
           );
           setCurso(cursoResponse.data);
-
+          console.log(cursoResponse.data);
           const modulosResponse = await axios.get(
             `http://localhost:4000/cursos/${id}/modulos`
           );
           setModulos(modulosResponse.data);
+          console.log(modulosResponse.data);
+          const estructuraResponse = await axios.get(
+            `http://localhost:4000/api/cursoEstructura/${id}`
+          );
+          console.log(estructuraResponse.data);
+          const estructuraCurso = estructuraResponse.data;
+          const modulosConLecciones = estructuraCurso.modulos?.length > 0;
+          const leccionesConContenido = estructuraCurso.modulos?.every(
+            (modulo) => modulo.lecciones.length > 0
+          );
+          const leccionesConContenidoVerificado = estructuraCurso.modulos.every(
+            (modulo) =>
+              modulo.lecciones.every(
+                (leccion) => leccion.contenidos && leccion.contenidos.length > 0
+              )
+          );
+          setIsCursoHabilitable(
+            modulosConLecciones &&
+              leccionesConContenido &&
+              leccionesConContenidoVerificado
+          );
         } catch (error) {
           setError(
             "Error al obtener el curso y los módulos. Por favor, intenta nuevamente."
@@ -123,6 +145,52 @@ export default function Vercurso() {
     }
   };
 
+  const verificarRequisitosMinimos = (curso) => {
+    return isCursoHabilitable;
+  };
+
+  const handleToggleCurso = async () => {
+    if (!curso.estado_curso && !verificarRequisitosMinimos(curso)) {
+      toast.error(
+        "El curso debe tener al menos un módulo con una lección y un contenido para ser habilitado"
+      );
+      return;
+    }
+    try {
+      const result = await Swal.fire({
+        title: `¿Estás seguro de ${
+          curso.estado_curso ? "deshabilitar" : "habilitar"
+        } este curso?`,
+        text: "Este cambio afectará la disponibilidad del curso para los usuarios.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: curso.estado_curso
+          ? "Sí, deshabilitar"
+          : "Sí, habilitar",
+        cancelButtonText: "Cancelar",
+      });
+      if (result.isConfirmed) {
+        const response = await axios.put(
+          `http://localhost:4000/cursos/${curso.id_curso}`,
+          {
+            estado_curso: !curso.estado_curso,
+          }
+        );
+        setCurso(response.data);
+        toast.success(
+          `El curso ha sido ${
+            curso.estado_curso ? "deshabilitado" : "habilitado"
+          } correctamente.`
+        );
+      }
+    } catch (error) {
+      console.error("Error al cambiar el estado del curso:", error);
+      toast.error("Hubo un problema al intentar cambiar el estado del curso.");
+    }
+  };
+
   if (loading) {
     return <p>Cargando curso y módulos...</p>;
   }
@@ -167,7 +235,7 @@ export default function Vercurso() {
             <div className="flex justify-end gap-2 p-2">
               <Button
                 className="bg-green-500 text-white hover:bg-green-600 w-[150px]"
-                onClick={() => navigate(`/cursos/${id}/agregar_modulos`)}
+                onClick={() => navigate(`/agregar-modulos/${id}`)}
               >
                 Agregar módulo
               </Button>
@@ -222,7 +290,7 @@ export default function Vercurso() {
                             className="bg-green-500 text-white hover:bg-green-600 w-[150px]"
                             onClick={() =>
                               navigate(
-                                `/cursos/${id}/modulos/${modulo.id_modulo}/agregar_lecciones`
+                                `/agregar-lecciones/${id}/${modulo.id_modulo}`
                               )
                             }
                           >
@@ -297,6 +365,20 @@ export default function Vercurso() {
           )}
         </CardContent>
       </Card>
+      <Button
+        variant={curso.estado_curso ? "destructive" : "default"}
+        onClick={handleToggleCurso}
+        className="mt-4 w-[150px]"
+        disabled={!isCursoHabilitable}
+      >
+        {curso.estado_curso ? "Deshabilitar" : "Habilitar"}
+      </Button>
+      {!isCursoHabilitable && (
+        <p className="text-red-500 mt-2">
+          El Curso debe tener contenido en su totalidad y debe estar asignado a
+          algún Área para poder Habilitarse
+        </p>
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import AsignarAreaACurso from "../private/asignarArea";
 import {
   Select,
@@ -30,6 +30,11 @@ import {
 } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+
+const isCursoVencido = (fechaLimite) => {
+  if (!fechaLimite) return false;
+  return new Date(fechaLimite) < new Date();
+};
 
 export default function ListadoCursos() {
   const [searchParams] = useSearchParams();
@@ -43,58 +48,80 @@ export default function ListadoCursos() {
   const [imagenesCursos, setImagenesCursos] = useState({});
   const [openAsignar, setOpenAsignar] = useState(null);
 
-  const handleSearch = (query) => {
-    console.log("Buscando:", query);
-  };
-
-  const handleToggleCurso = async (curso) => {
-    try {
-      const result = await Swal.fire({
-        title: `¿Estás seguro de ${
-          curso.estado_curso ? "deshabilitar" : "habilitar"
-        } este curso?`,
-        text: "Este cambio afectará la disponibilidad del curso para los usuarios.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: curso.estado_curso
-          ? "Sí, deshabilitar"
-          : "Sí, habilitar",
-        cancelButtonText: "Cancelar",
+  const filteredCursos = useMemo(() => {
+    return cursos
+      .filter((curso) =>
+        Object.values(curso).some(
+          (value) =>
+            value !== null &&
+            value !== undefined &&
+            value.toString().toLowerCase().includes(busqueda.toLowerCase())
+        )
+      )
+      .filter((curso) => {
+        if (statusFilter === "todos") return true;
+        if (statusFilter === "activos") return curso.estado_curso;
+        if (statusFilter === "inactivos") return !curso.estado_curso;
+        return true;
       });
+  }, [cursos, busqueda, statusFilter]);
 
-      if (result.isConfirmed) {
-        const response = await axios.put(
-          `http://localhost:4000/cursos/${curso.id_curso}`,
+  useEffect(() => {
+    const cargarImagenesCursos = async () => {
+      try {
+        const cursosIds = filteredCursos.map((curso) => curso.id_curso);
+
+        const response = await fetch(
+          "http://localhost:4000/api/cursos/imagenes",
           {
-            estado_curso: !curso.estado_curso,
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ cursos: cursosIds }),
           }
         );
-        setCursos((prevCursos) =>
-          prevCursos.map((c) =>
-            c.id_curso === curso.id_curso ? response.data : c
-          )
-        );
-        toast.success(
-          `El curso ha sido ${
-            curso.estado_curso ? "deshabilitado" : "habilitado"
-          } correctamente.`
-        );
+
+        const data = await response.json();
+
+        const imagenesMap = data.reduce((acc, img) => {
+          acc[img.id_curso] = img;
+          return acc;
+        }, {});
+
+        setImagenesCursos(imagenesMap);
+      } catch (error) {
+        console.error("Error al cargar imágenes de los cursos:", error);
       }
+    };
+
+    if (filteredCursos.length > 0) {
+      cargarImagenesCursos();
+    }
+  }, [filteredCursos]);
+
+  const fetchCursos = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/cursos");
+      setCursos(response.data);
     } catch (error) {
-      console.error("Error al cambiar el estado del curso:", error);
-      toast.error("Hubo un problema al intentar cambiar el estado del curso.");
+      console.error("Error al obtener los cursos:", error);
+      toast.error("Error al cargar los cursos");
     }
   };
 
+  useEffect(() => {
+    fetchCursos();
+  }, []);
+
   const handleAsignarAreaComplete = () => {
-    // toast.success("Áreas asignadas correctamente");
     fetchCursos(); // Recargar los cursos para reflejar los cambios
+    setOpenAsignar(null); // Cerrar el diálogo
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Toaster />
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-center mb-6">
           Gestión de Cursos
@@ -119,11 +146,11 @@ export default function ListadoCursos() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="activos">Activos</SelectItem>
-              <SelectItem value="inactivos">Inactivos</SelectItem>
+              <SelectItem value="activos">Habilitados</SelectItem>
+              <SelectItem value="inactivos">Inhabilitados</SelectItem>
             </SelectContent>
           </Select>
-          <Link to="/agregar_cursos">
+          <Link to="/agregar-cursos">
             <Button className="w-full md:w-auto">+ Agregar Nuevo Curso</Button>
           </Link>
         </div>
@@ -188,32 +215,28 @@ export default function ListadoCursos() {
               </CardContent>
 
               <CardFooter className="flex flex-col gap-2 pt-4">
-                <div className="flex gap-2 w-full">
-                  <Link
-                    to={`/modificar_curso/${curso.id_curso}`}
-                    className="flex-1"
-                  >
-                    <Button variant="outline" className="w-full">
-                      Modificar
-                    </Button>
-                  </Link>
+                <Link
+                  to={`/modificar-curso/${curso.id_curso}`}
+                  className="flex-1"
+                >
                   <Button
-                    variant={curso.estado_curso ? "destructive" : "default"}
-                    onClick={() => handleToggleCurso(curso)}
-                    className="flex-1"
+                    variant="outline"
+                    className="w-full bg-blue-500 text-white hover:bg-blue-600 transition duration-200"
                   >
-                    {curso.estado_curso ? "Deshabilitar" : "Habilitar"}
+                    Modificar
                   </Button>
-                </div>
+                </Link>
 
                 <Dialog
                   open={openAsignar === curso.id_curso}
-                  onOpenChange={(open) => !open && setOpenAsignar(null)}
+                  onOpenChange={(open) => {
+                    if (!open) setOpenAsignar(null);
+                  }}
                 >
                   <DialogTrigger asChild>
                     <Button
                       onClick={() => setOpenAsignar(curso.id_curso)}
-                      className="w-full"
+                      className="w-full bg-green-500 text-white hover:bg-green-600 transition duration-200"
                       variant="secondary"
                     >
                       Asignar áreas
@@ -232,14 +255,13 @@ export default function ListadoCursos() {
               </CardFooter>
             </Card>
           ))}
+          {filteredCursos.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No se encontraron cursos que coincidan con los criterios de
+              búsqueda.
+            </div>
+          )}
         </div>
-
-        {cursos.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No se encontraron cursos que coincidan con los criterios de
-            búsqueda.
-          </div>
-        )}
       </div>
     </div>
   );

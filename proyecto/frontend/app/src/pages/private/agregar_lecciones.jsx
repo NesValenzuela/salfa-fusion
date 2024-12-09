@@ -19,11 +19,10 @@ const AgregarLeccion = () => {
     e.preventDefault();
 
     try {
-      const response =
-        (await axios.post) <
-        { id: number } >
-        (`http://localhost:4000/modulos/${moduloId}/lecciones`, leccion);
-
+      const response = await axios.post(
+        `http://localhost:4000/modulos/${moduloId}/lecciones`,
+        leccion
+      );
       // Verifica si la respuesta es exitosa
       if (response.status === 201) {
         // Redirige a la página del curso tras crear la lección

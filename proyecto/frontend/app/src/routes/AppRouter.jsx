@@ -23,18 +23,13 @@ import PublicRoute from "../components/PublicRoute";
 import ErrorRoute from "../components/ErrorRoute";
 import Home from "../components/Home";
 //cursos
-import AgregarContenido from "../pages/private/agregar_contenido";
 import AgregarCursos from "../pages/private/agregar_cursos";
 import AgregarLecciones from "../pages/private/agregar_lecciones";
 import AgregarModulos from "../pages/private/agregar_modulos";
 import AsignarAreaACurso from "../pages/private/asignarArea";
-import VistaCursosAdmin from "../pages/private/cursos-admin";
-import Cursos_home from "../pages/private/cursos";
 import DashboardRRHH from "../pages/private/dashboard-rh";
 import EditarUsuario from "../pages/private/editarUsuario";
-import HomeUsuarios from "../pages/private/home-usuarios";
 import ListadoCursos from "../pages/private/listado_cursos";
-import ListadoCursosUsuario from "../pages/private/listado-cursos-usuario";
 import ListadoAreas from "../pages/private/listar-areas";
 import ListadoUsuarios from "../pages/private/listarUsuarios";
 import Modificar_curso from "../pages/private/modificar_curso";
@@ -43,13 +38,14 @@ import Modificar_modulo from "../pages/private/modificar_modulos";
 import FormularioModArea from "../pages/private/modificar-area";
 import FormularioArea from "../pages/private/nueva-area";
 import N_usuario from "../pages/private/nuevo-usuario";
-import PerfilUsuario from "../pages/private/perfil-usuario";
-import Perfiladm from "../pages/private/perfiladmin";
+import MiProgreso from "../pages/private/miprogreso";
 import SubirContenido from "../pages/private/subircontenido";
-import UsuariosAdmin from "../pages/private/usuarios-admin";
+import CargaUsuarios from "../pages/private/carga-usuarios";
+import UsuariosCurso from "../pages/private/usuarios-curso";
 import VerContenido from "../pages/private/ver_contenido";
 import DetalleCurso from "../pages/private/vercurso-usuario";
 import Vercurso from "../pages/private/vercurso";
+import HomeUsuarios from "../pages/private/listado-cursos-usuario";
 import DetalleUsuarioLecciones from "../pages/private/vista-perfil-rh";
 
 const AppRouter = () => {
@@ -72,7 +68,6 @@ const AppRouter = () => {
           </ErrorRoute>
         }
       />
-
       {/* Rutas públicas */}
       <Route path="/about" element={<About />} />
       <Route
@@ -217,6 +212,17 @@ const AppRouter = () => {
         }
       />
       <Route
+        path="/listado-cursos-usuario"
+        element={
+          <ProtectedRoute>
+            <>
+              <Navbar />
+              <HomeUsuarios />
+            </>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/responderEncuesta/:encuestaId"
         element={
           <ProtectedRoute allowedRoles={["Usuario", "Administrador"]}>
@@ -238,37 +244,9 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
-
       {/* Rutas capacitaciones */}
       <Route
-        path="/cursos"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <Cursos_home />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cursos-admin"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <VistaCursosAdmin />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/agregar-contenido"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <AgregarContenido />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/agregar-cursos"
+        path="/agregar-cursos" //pagina redireccionada
         element={
           <ProtectedRoute>
             <Navbar />
@@ -277,7 +255,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/agregar-lecciones/:cursoId/:moduloId"
+        path="/agregar-lecciones/:cursoId/:moduloId" //pagina redireccionada
         element={
           <ProtectedRoute>
             <Navbar />
@@ -286,7 +264,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/agregar-modulos/:cursoId"
+        path="/agregar-modulos/:id" //pagina redireccionada
         element={
           <ProtectedRoute>
             <Navbar />
@@ -295,7 +273,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/asignar-area/:cursoId"
+        path="/asignar-area/:cursoId" //popup
         element={
           <ProtectedRoute>
             <Navbar />
@@ -304,16 +282,25 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/dashboard-rh"
+        path="/carga-usuarios" //transformar a popup
         element={
           <ProtectedRoute>
+            <Navbar />
+            <CargaUsuarios />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard-rh" //pagina mandar al nav
+        element={
+          <ProtectedRoute allowedRoles={["Administrador"]}>
             <Navbar />
             <DashboardRRHH />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/editar-usuario/:id"
+        path="/editar-usuario/:rut" // popup para editar usuario
         element={
           <ProtectedRoute>
             <Navbar />
@@ -322,16 +309,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/home-usuarios"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <HomeUsuarios />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/listado-cursos"
+        path="/admin-cursos" //listado de cursos para administrador// mandar al nav
         element={
           <ProtectedRoute>
             <Navbar />
@@ -340,16 +318,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/listado-cursos-usuario"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <ListadoCursosUsuario />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/listar-areas"
+        path="/listar-areas" //areglar modal y que muestre la imagen que ya tiene, no carga imagen si tiene error por no tener imagen xdxd//mandar al nav
         element={
           <ProtectedRoute>
             <Navbar />
@@ -358,7 +327,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/listar-usuarios"
+        path="/listar-usuarios" //mandar al nav
         element={
           <ProtectedRoute>
             <Navbar />
@@ -367,7 +336,16 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/modificar-curso/:id"
+        path="/miprogreso" //mandar al nav
+        element={
+          <ProtectedRoute>
+            <Navbar />
+            <MiProgreso />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/modificar-curso/:id" //popup para modificar curso
         element={
           <ProtectedRoute>
             <Navbar />
@@ -376,16 +354,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/modificar-lecciones/:cursoId/:moduloId/:leccionId"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <Modificar_lecciones />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/modificar-modulos/:cursoId/:moduloId"
+        path="/cursos/:cursoId/modulos/:moduloId/modificar" //popup para modificar modulo
         element={
           <ProtectedRoute>
             <Navbar />
@@ -394,7 +363,16 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/modificar-area"
+        path="/cursos/:cursoId/modulos/:moduloId/modificar_lecciones/:leccionId" //popup para modificar leccion
+        element={
+          <ProtectedRoute>
+            <Navbar />
+            <Modificar_lecciones />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/modificar-area/:id" //popup para modificar area
         element={
           <ProtectedRoute>
             <Navbar />
@@ -403,7 +381,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/nueva-area"
+        path="/nueva-area" //popup para nueva area
         element={
           <ProtectedRoute>
             <Navbar />
@@ -412,7 +390,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/nuevo-usuario"
+        path="/nuevo-usuario" //popup para nuevo usuario, añadir contraseña
         element={
           <ProtectedRoute>
             <Navbar />
@@ -421,25 +399,7 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/perfil-usuario"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <PerfilUsuario />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/perfiladmin"
-        element={
-          <ProtectedRoute>
-            <Navbar />
-            <Perfiladm />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/subir-contenido"
+        path="/subir-contenido" //popup para subir contenido desde la leccion
         element={
           <ProtectedRoute>
             <Navbar />
@@ -448,16 +408,16 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/usuarios-admin"
+        path="/usuarios-curso/:id" //dashboard de curso viene de dashboard-rh
         element={
           <ProtectedRoute>
             <Navbar />
-            <UsuariosAdmin />
+            <UsuariosCurso />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/ver-contenido/:leccionId"
+        path="/ver_contenido/:cursoId/:moduloId/:leccionId" //ver contenido, redireccionado de listadocursos para adm
         element={
           <ProtectedRoute>
             <Navbar />
@@ -466,16 +426,16 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/vista-perfil-rh/:id"
+        path="/vercurso-usuario/:id" //redireccionado de listadocursos para usuario
         element={
           <ProtectedRoute>
             <Navbar />
-            <DetalleUsuarioLecciones />
+            <DetalleCurso />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/vercurso/:id"
+        path="/vercurso/:id" //ver curso para adm, arreglar botones, arregalr habilitar deshabilitar el curso
         element={
           <ProtectedRoute>
             <Navbar />
@@ -484,15 +444,14 @@ const AppRouter = () => {
         }
       />
       <Route
-        path="/vercurso-usuario/:id"
+        path="/vista-perfil-rh/:id" //adm viendo usuario para crear informe // mandar al nav
         element={
           <ProtectedRoute>
             <Navbar />
-            <DetalleCurso />
+            <DetalleUsuarioLecciones />
           </ProtectedRoute>
         }
       />
-
       {/* Ruta por defecto */}
       <Route path="/" element={<Navigate to="/login" />} />
     </Routes>

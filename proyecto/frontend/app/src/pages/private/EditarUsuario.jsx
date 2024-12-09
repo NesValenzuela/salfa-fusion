@@ -21,12 +21,12 @@ import axios from "axios";
 
 export default function EditarUsuario({ usuario, onUsuarioActualizado }) {
   const [formData, setFormData] = useState({
-    nombre: usuario.nombre,
-    apellido_paterno: usuario.apellido_paterno,
-    apellido_materno: usuario.apellido_materno,
-    correo: usuario.correo,
-    rolId: usuario.rolId,
-    areaId: usuario.areaId,
+    nombre: usuario?.nombre || "",
+    apellido_paterno: usuario?.apellido_paterno || "",
+    apellido_materno: usuario?.apellido_materno || "",
+    correo: usuario?.correo || "",
+    rolId: usuario?.rolId || "",
+    areaId: usuario?.areaId || "",
   });
   const [roles, setRoles] = useState([]);
   const [areas, setAreas] = useState([]);
@@ -55,6 +55,19 @@ export default function EditarUsuario({ usuario, onUsuarioActualizado }) {
       cargarDatos();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (usuario) {
+      setFormData({
+        nombre: usuario.nombre || "",
+        apellido_paterno: usuario.apellido_paterno || "",
+        apellido_materno: usuario.apellido_materno || "",
+        correo: usuario.correo || "",
+        rolId: usuario.rolId || "",
+        areaId: usuario.areaId || "",
+      });
+    }
+  }, [usuario]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

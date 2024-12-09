@@ -1,16 +1,25 @@
 /* Estilos para el estado de arrastre */
 .sortable-ghost {
-  opacity: 0.6;
-  background-color: rgb(243 244 246);
+  opacity: 0.5;
+  background-color: #f3f4f6 !important;
+  border: 2px dashed #9ca3af !important;
 }
 
 .sortable-drag {
+  opacity: 0.95;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: scale(1.02);
+}
+
+.drag-handle {
+  touch-action: none;
+  cursor: grab;
+}
+
+.drag-handle:active {
   cursor: grabbing;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-  transform: scale(1.05) rotate(1deg);
-  z-index: 50;
-  background-color: white;
-  border-radius: 0.5rem;
 }
 
 .sortable-chosen {
